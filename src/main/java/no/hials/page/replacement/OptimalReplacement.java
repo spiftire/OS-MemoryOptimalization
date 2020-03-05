@@ -10,7 +10,10 @@ import java.util.List;
 public class OptimalReplacement extends ReplacementAlgorithm {
 
     private int frameToReset;
+    int numberOfInserts = 0;
     private int numberOfPhysicalFrames;
+    List<Integer> pageReferences;
+    int workingValue;
 
     @Override
     protected void reset() {
@@ -20,7 +23,7 @@ public class OptimalReplacement extends ReplacementAlgorithm {
 
     @Override
     public int process(String referenceString) {
-        List<Integer> pageReferences = Tools.stringToArray(referenceString);
+        pageReferences = Tools.stringToArray(referenceString);
         if (pageReferences == null) return 0;
 
         int replacements = 0; // How many page replacements made
@@ -35,44 +38,103 @@ public class OptimalReplacement extends ReplacementAlgorithm {
 
         int frame = 0;
         for (int ref : pageReferences) {
+            workingValue = ref;
             boolean placed = false;
             if (!isLoaded(ref)) {
-                listOfFrames.set(frame, ref);
+                var index = getIndexToReplace();
+                replacements = isReplacing(replacements, index);
+                insertIntoFrames(ref, index);
                 placed = true;
+                frame++;
             }
 
-            while (!placed) {
-                while (!placed && frame < numberOfPhysicalFrames) {
-                    if (frames[frame] == -1) {
-                        frames[frame] = pageReferences.get(ref);
-                        placed = true;
-                        pageReferences.remove(0); // todo reset loop
-                    }
-                    frame++;
-                }
+//            while (!placed) {
+//                while (!placed && frame < numberOfPhysicalFrames) {
+//                    if (isFrameEmpty(listOfFrames.get(frame))) {
+//                        insertIntoFrames(pageReferences.get(ref), frame);
+//                        placed = true;
+//                        pageReferences.remove(0); // todo reset loop
+//                    }
+//                    frame++;
+//                }
 
                 // no free space must replace
                 //var arrayOfNextStrings = pageReferences.subList(ref, ref+numberOfPhysicalFrames);
-                int indexOfFrameToDelete = 0;
-                Integer valueToReplace = null;
-                for (int fram :
-                        frames) {
-                    int longestDistance = 0;
-                    if (!pageReferences.contains(fram)) {
-                        valueToReplace = fram;
-                    }
-                    if (pageReferences.contains(fram)) {
-                        var indexOfFrame = pageReferences.indexOf(fram);
-                        if (indexOfFrame > longestDistance) {
-                            longestDistance = indexOfFrame;
-                            valueToReplace = fram;
-                        }
-                    }
-                }
 
-                if (valueToReplace != null) {
-                    indexOfFrameToDelete = listOfFrames.indexOf(valueToReplace);
-                }
+//                frames[indexOfFrameToDelete] = ref;
+//                replacements++;
+
+            }
+//            frame = frame % numberOfPhysicalFrames; // wrap around the frames.
+//        }
+
+        return replacements;
+    }
+
+    /**
+     * if the value at index is not like -1
+     * it means that something is getting replaced
+     * @param replacements the number of replacements all ready done
+     * @param index the index of the frame to check
+     * @return
+     */
+    private int isReplacing(int replacements, int index) {
+        if(frames[index] != -1) {
+
+            replacements++;
+        }
+        return replacements;
+    }
+
+    private void insertIntoFrames(int valueToBeInserted, int indexOfPlacement) {
+        frames[indexOfPlacement] = valueToBeInserted;
+        numberOfInserts++;
+    }
+
+    private int getIndexToReplace() {
+        int index = checkForEmptySpace();
+        if (index == -1) {
+            index = findIndexOfLongestGap(workingValue);
+        }
+
+        return index;
+    }
+
+    private int findIndexOfLongestGap(int valueToReplace) {
+        int indexOfFrameToDelete = -1;
+        int longestDistance = 0;
+        var listOfFrames = convertToList(frames);
+
+        var shortenedReferenceList = shortenReferenceList();
+        for (int frame : listOfFrames) {
+            if (!shortenedReferenceList.contains(frame)) {
+                indexOfFrameToDelete = listOfFrames.indexOf(frame);
+//                longestDistance = pageReferences.size();
+                break;
+            }
+
+            var i = shortenedReferenceList.indexOf(frame);
+            if (i > longestDistance) {
+                longestDistance = i;
+            }
+        }
+
+        if (indexOfFrameToDelete == -1) {
+            var valueToBeReplaced = shortenedReferenceList.get(longestDistance);
+            indexOfFrameToDelete = listOfFrames.indexOf(valueToBeReplaced);
+        }
+
+
+//        indexOfFrameToDelete = listOfFrames.indexOf(valueToReplace);
+
+
+        return indexOfFrameToDelete;
+    }
+
+    private ArrayList<Integer> shortenReferenceList() {
+        var result = pageReferences.subList(numberOfInserts, pageReferences.size());
+        return new ArrayList<Integer>(result);
+    }
 
     /**
      * Checks for empty space
@@ -106,9 +168,6 @@ public class OptimalReplacement extends ReplacementAlgorithm {
         }
         return result;
     }
-
-    // TODO - create any helper methods here if you need any
-
 
     @Override
     public void setup(int numberOfPhysicalFrames) {
