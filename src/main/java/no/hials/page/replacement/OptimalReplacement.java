@@ -11,6 +11,7 @@ public class OptimalReplacement extends ReplacementAlgorithm {
 
     private int frameToReset;
     int numberOfInserts = 0;
+    private int numberOfAviodedReplacements = 0;
     private int numberOfPhysicalFrames;
     List<Integer> pageReferences;
     int workingValue;
@@ -46,6 +47,8 @@ public class OptimalReplacement extends ReplacementAlgorithm {
                 insertIntoFrames(ref, index);
                 placed = true;
                 frame++;
+            } else {
+                numberOfAviodedReplacements++;
             }
 
 //            while (!placed) {
@@ -87,6 +90,10 @@ public class OptimalReplacement extends ReplacementAlgorithm {
     }
 
     private void insertIntoFrames(int valueToBeInserted, int indexOfPlacement) {
+        System.out.printf("%d: The value %d is replacing %d \n", numberOfInserts
+                , valueToBeInserted
+                , frames[indexOfPlacement]
+        );
         frames[indexOfPlacement] = valueToBeInserted;
         numberOfInserts++;
     }
@@ -132,7 +139,7 @@ public class OptimalReplacement extends ReplacementAlgorithm {
     }
 
     private ArrayList<Integer> shortenReferenceList() {
-        var result = pageReferences.subList(numberOfInserts, pageReferences.size());
+        var result = pageReferences.subList(numberOfInserts+numberOfAviodedReplacements, pageReferences.size());
         return new ArrayList<Integer>(result);
     }
 
