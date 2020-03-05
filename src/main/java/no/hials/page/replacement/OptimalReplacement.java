@@ -74,14 +74,28 @@ public class OptimalReplacement extends ReplacementAlgorithm {
                     indexOfFrameToDelete = listOfFrames.indexOf(valueToReplace);
                 }
 
-                frames[indexOfFrameToDelete] = ref;
-                replacements++;
-
+    /**
+     * Checks for empty space
+     *
+     * @return index of empty, -1 if not found.
+     */
+    private int checkForEmptySpace() {
+        var result = -1;
+        var index = 0;
+        boolean foundIndex = false;
+        while (!foundIndex && index < frames.length) {
+            if (isFrameEmpty(frames[index])) {
+                result = index;
+                foundIndex = true;
+            } else {
+                index++;
             }
-            frame = frame % numberOfPhysicalFrames; // wrap around the frames.
         }
+        return result;
+    }
 
-        return replacements;
+    private boolean isFrameEmpty(int frame) {
+        return frame == -1;
     }
 
     private List<Integer> convertToList(int[] frames) {
