@@ -9,17 +9,15 @@ import java.util.List;
  */
 public class OptimalReplacement extends ReplacementAlgorithm {
 
-    private int frameToReset;
     int numberOfInserts = 0;
     private int numberOfAviodedReplacements = 0;
-    private int numberOfPhysicalFrames;
     List<Integer> pageReferences;
     int workingValue;
 
     @Override
     protected void reset() {
         // TODO - do preparation/initilization here, if needed
-        frameToReset = 0;
+        // did not see the use of this
     }
 
     @Override
@@ -29,67 +27,48 @@ public class OptimalReplacement extends ReplacementAlgorithm {
 
         int replacements = 0; // How many page replacements made
 
-        // TODO - process the reference string here. You can see FIFOReplacement
+        // process the reference string here. You can see FIFOReplacement
         // as an example. But remember, that FIFO uses a different algorithm.
         // This class should use Optimal Replacement algorithm, described
         // in Section 9.4.
         // Get the reference list as an array
 
-        List<Integer> listOfFrames = convertToList(frames);
-
-        int frame = 0;
         for (int ref : pageReferences) {
             workingValue = ref;
-            boolean placed = false;
             if (!isLoaded(ref)) {
                 var index = getIndexToReplace();
                 replacements = isReplacing(replacements, index);
                 insertIntoFrames(ref, index);
-                placed = true;
-                frame++;
             } else {
                 numberOfAviodedReplacements++;
             }
-
-//            while (!placed) {
-//                while (!placed && frame < numberOfPhysicalFrames) {
-//                    if (isFrameEmpty(listOfFrames.get(frame))) {
-//                        insertIntoFrames(pageReferences.get(ref), frame);
-//                        placed = true;
-//                        pageReferences.remove(0); // todo reset loop
-//                    }
-//                    frame++;
-//                }
-
-                // no free space must replace
-                //var arrayOfNextStrings = pageReferences.subList(ref, ref+numberOfPhysicalFrames);
-
-//                frames[indexOfFrameToDelete] = ref;
-//                replacements++;
-
-            }
-//            frame = frame % numberOfPhysicalFrames; // wrap around the frames.
-//        }
-
+        }
         return replacements;
     }
 
     /**
      * if the value at index is not like -1
      * it means that something is getting replaced
+     *
      * @param replacements the number of replacements all ready done
-     * @param index the index of the frame to check
+     * @param index        the index of the frame to check
      * @return
      */
     private int isReplacing(int replacements, int index) {
-        if(frames[index] != -1) {
-
+        if (frames[index] != -1) {
             replacements++;
         }
         return replacements;
     }
 
+    /**
+     * Inserts a value into a frame
+     *
+     * @param valueToBeInserted
+     * @param indexOfPlacement
+     */
     private void insertIntoFrames(int valueToBeInserted, int indexOfPlacement) {
+        // logging for debugging
         System.out.printf("%d: The value %d is replacing %d \n", numberOfInserts
                 , valueToBeInserted
                 , frames[indexOfPlacement]
@@ -101,13 +80,18 @@ public class OptimalReplacement extends ReplacementAlgorithm {
     private int getIndexToReplace() {
         int index = checkForEmptySpace();
         if (index == -1) {
-            index = findIndexOfLongestGap(workingValue);
+            index = findIndexOfLongestGap();
         }
 
         return index;
     }
 
-    private int findIndexOfLongestGap(int valueToReplace) {
+    /**
+     * Finds the index of the reference with the longest gap, aka the longest until used again.
+     *
+     * @return the index of that reference
+     */
+    private int findIndexOfLongestGap() {
         int indexOfFrameToDelete = -1;
         int longestDistance = 0;
         var listOfFrames = convertToList(frames);
@@ -138,9 +122,14 @@ public class OptimalReplacement extends ReplacementAlgorithm {
         return indexOfFrameToDelete;
     }
 
+    /**
+     * Shortens the reference list so we don't have to iterate over the whole thing
+     *
+     * @return
+     */
     private ArrayList<Integer> shortenReferenceList() {
-        var result = pageReferences.subList(numberOfInserts+numberOfAviodedReplacements, pageReferences.size());
-        return new ArrayList<Integer>(result);
+        var result = pageReferences.subList(numberOfInserts + numberOfAviodedReplacements, pageReferences.size());
+        return new ArrayList<>(result);
     }
 
     /**
@@ -167,18 +156,19 @@ public class OptimalReplacement extends ReplacementAlgorithm {
         return frame == -1;
     }
 
+    /**
+     * Converts an `int[]` into `List<Integer>`
+     *
+     * @param frames
+     * @return
+     */
     private List<Integer> convertToList(int[] frames) {
         var result = new ArrayList<Integer>();
+        result.ensureCapacity(frames.length);
         for (int frame :
                 frames) {
             result.add(frame);
         }
         return result;
-    }
-
-    @Override
-    public void setup(int numberOfPhysicalFrames) {
-        super.setup(numberOfPhysicalFrames);
-        this.numberOfPhysicalFrames = numberOfPhysicalFrames;
     }
 }
